@@ -1,0 +1,134 @@
+import pandas as pd
+
+# 加载配置和样本信息
+configfile: "config/config.json"
+samples = pd.read_csv(config["samples"], index_col="sample")
+
+
+# 定义最终输出目标
+rule all:
+    input:
+        "results/multiqc_report.html",
+        "results/counts/gene_counts.tsv",
+        "results/deseq2/DE_results.csv",
+        expand("results/fastqc/trimmed/{sample}_R{read}_fastqc.html", sample=samples.index, read=[1, 2])  # 确保post-trim QC执行
+
+rule fastqc_raw:
+    input:
+        fq1 = lambda wildcards: samples.loc[wildcards.sample, "fq1"],
+        fq2 = lambda wildcards: samples.loc[wildcards.sample, "fq2"]
+    output:
+        html1 = "results/fastqc/raw/{sample}_R1_fastqc.html",
+        zip1 = "results/fastqc/raw/{sample}_R1_fastqc.zip",
+        html2 = "results/fastqc/raw/{sample}_R2_fastqc.html", 
+        zip2 = "results/fastqc/raw/{sample}_R2_fastqc.zip"
+    log:
+        "logs/fastqc/raw/{sample}.log"
+    params:
+        prefix = "E250715005_L01_"
+    threads: 2
+    shell:
+        """
+        # 创建目录并运行FastQC（所有命令写在一行，避免换行问题）
+        mkdir -p results/fastqc/raw && \
+        fastqc {input.fq1} {input.fq2} -o results/fastqc/raw/ 2> {log} && \
+        mv "results/fastqc/raw/{params.prefix}{wildcards.sample}_1_fastqc.html" {output.html1} && \
+        mv "results/fastqc/raw/{params.prefix}{wildcards.sample}_1_fastqc.zip" {output.zip1} && \
+        mv "results/fastqc/raw/{params.prefix}{wildcards.sample}_2_fastqc.html" {output.html2} && \
+        mv "results/fastqc/raw/{params.prefix}{wildcards.sample}_2_fastqc.zip" {output.zip2}
+        """
+
+
+# ----------- 预处理 -----------
+rule trim:
+    input:
+        fq1 = lambda wildcards: samples.loc[wildcards.sample, "fq1"],
+        fq2 = lambda wildcards: samples.loc[wildcards.sample, "fq2"]
+    output:
+        r1 = "results/trimmed/{sample}_R1_clean.fastq.gz",
+        r1_unpaired = "results/trimmed/{sample}_R1_unpaired.fastq.gz",
+        r2 = "results/trimmed/{sample}_R2_clean.fastq.gz",
+        r2_unpaired = "results/trimmed/{sample}_R2_unpaired.fastq.gz"
+    log:
+        "logs/trim/{sample}.log"
+    threads: 4
+    conda:
+        "envs/rnaseq.yml"
+    shell:
+        "trimmomatic PE -threads {threads} -phred33 "
+        "{input.fq1} {input.fq2} "
+        "{output.r1} {output.r1_unpaired} "
+        "{output.r2} {output.r2_unpaired} "
+        "{config[params][trimmomatic]} 2> {log}"
+
+# ----------- 质控2 -----------
+rule fastqc_posttrim:
+    input:
+        r1 = rules.trim.output.r1,  # 依赖trim规则的clean输出
+        r2 = rules.trim.output.r2
+    output:
+        html = "results/fastqc/trimmed/{sample}_R{read}_fastqc.html",
+        zip = "results/fastqc/trimmed/{sample}_R{read}_fastqc.zip"
+    log:
+        "logs/fastqc/trimmed/{sample}_R{read}.log"
+    threads: 2
+    conda:
+        "envs/rnaseq.yml"
+    shell:
+        "fastqc {input.r1} {input.r2} -o results/fastqc/trimmed/ 2> {log}"
+
+
+
+# ----------- 质控3 -----------
+rule multiqc:
+    input:
+        raw = expand("results/fastqc/raw/{sample}_R{read}_fastqc.zip", sample=samples.index, read=[1, 2]),
+        trimmed = expand("results/fastqc/trimmed/{sample}_R{read}_fastqc.zip", sample=samples.index, read=[1, 2])
+    output:
+        "results/multiqc_report.html"
+    conda:
+        "envs/rnaseq.yml"
+    shell:
+        "multiqc results/fastqc/ -o results/"  # 自动合并raw和trimmed目录
+# ----------- 比对与定量 -----------
+rule hisat2_align:
+    input:
+        r1 = rules.trim.output.r1,
+        r2 = rules.trim.output.r2,
+        index = config["genome"]["index"]
+    output:
+        "results/align/{sample}.bam"
+    log:
+        "logs/hisat2/{sample}.log"
+    threads: 8
+    conda:
+        "envs/rnaseq.yml"
+    shell:
+        "hisat2 -x {input.index} -1 {input.r1} -2 {input.r2} "
+        "{config[params][hisat2]} 2> {log} | "
+        "samtools view -bS - | samtools sort -o {output}"
+
+rule featurecounts:
+    input:
+        bams = expand("results/align/{sample}.bam", sample=samples.index),
+        gtf = config["genome"]["gtf"]
+    output:
+        "results/counts/gene_counts.tsv"
+    log:
+        "logs/featurecounts.log"
+    conda:
+        "envs/rnaseq.yml"
+    shell:
+        "featureCounts -a {input.gtf} -o {output} "
+        "-T {threads} -p -t exon -g gene_id "
+        "results/align/*.bam 2> {log}"
+
+# ----------- 差异分析 -----------
+rule deseq2:
+    input:
+        counts = "results/counts/gene_counts.tsv",
+        samples = config["samples"]
+    output:
+        "results/deseq2/DE_results.csv"
+    script:
+        "scripts/deseq2.R"

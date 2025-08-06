@@ -1,0 +1,12 @@
+# 参考基因组和注释
+ genome:
+   index: "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/gencode.v41/humanGencodeIndex"  # 不带.ht2后缀的索引前缀
+   gtf: "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"  # GTF注释文件路径
+
+     # 工具参数
+     params:
+       trimmomatic: "ILLUMINACLIP:adapters.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
+       hisat2: "--dta --threads 4"
+       salmon: "--gcBias --validateMappings"
+# 样本信息（自动从samples.csv加载）
+samples: "/mnt/sdc/wwDatas/JKX/JKX20250801/workflow/config/samples.csv"

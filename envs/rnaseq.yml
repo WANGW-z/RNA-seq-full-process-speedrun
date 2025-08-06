@@ -1,0 +1,20 @@
+name: rnaseq
+channels:
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
+  - conda-forge
+  - bioconda
+  - defaults
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+
+dependencies:
+  - fastqc=0.12
+  - multiqc=1.14
+  - trimmomatic=0.39
+  - hisat2=2.2.1
+  - samtools=1.17
+  - subread=2.0.3
+  - salmon=1.10.0
+  - r-pheatmap=1.0.12
+

@@ -1,0 +1,13 @@
+{
+	  "genome": {
+		      "index": "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/gencode.v41/",
+		          "gtf": "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"
+			    },
+			      "params": {
+				          "trimmomatic": "ILLUMINACLIP:adapters.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
+					      "hisat2": "--dta --threads 4",
+					          "salmon": "--gcBias --validateMappings"
+						    },
+						      "samples": "/mnt/sdc/wwDatas/JKX/JKX20250801/workflow/config/samples.csv"
+}
+
