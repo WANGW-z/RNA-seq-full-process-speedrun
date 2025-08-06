@@ -1,6 +1,6 @@
 {
 	  "genome": {
-		      "index": "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/gencode.v41/",
+		      "index": "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/humanGencodeIndex",
 		          "gtf": "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"
 			    },
 			      "params": {
