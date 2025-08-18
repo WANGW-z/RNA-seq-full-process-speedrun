@@ -1,6 +1,10 @@
 {
 	  "genome": {
-		      "index": "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/humanGencodeIndex/humanGencodeIndex",		          "gtf": "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"
+<<<<<<< HEAD
+		      "index": "/home/wangwen/gnomics/human/hisat2/index/hisat2Index/humanGencodeIndex/humanGencodeIndex",		          
+			  "gtf": "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"
+		          "gtf": "/home/wangwen/gnomics/human/hisat2/gencode.v41.annotation.gtf"
+>>>>>>> 7db1be9e09c98a48117a452eb6fc644294bbcd89
 			    },
 			      "params": {
 				          "trimmomatic": "ILLUMINACLIP:adapters.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36",
